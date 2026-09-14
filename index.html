@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>造型饅頭配方計算器</title>
+<style>
+:root{
+  --bg:#f6f7f8; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --line:#e5e7eb; --accent:#111827; --soft:#f3f4f6; --danger:#b91c1c;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:980px;margin:0 auto;padding:16px 12px 40px}
+h1{font-size:24px;margin:6px 0 16px}
+h2{font-size:18px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:700}
+button.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}
+button.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:20px;margin-top:3px}
+.small{font-size:12px;color:var(--muted)}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:920px}
+th,td{border-bottom:1px solid var(--line);padding:8px;vertical-align:middle;text-align:left}
+th{font-size:12px;color:var(--muted);background:#fafafa;position:sticky;top:0}
+td input, td select{min-width:100px;padding:9px}
+td .mini{min-width:80px}
+.material-header{display:flex;gap:8px;align-items:center}
+.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:12px}
+.footer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.note{padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;font-size:13px;color:#9a3412}
+@media (max-width:640px){
+  .container{padding:10px 8px 28px}
+  h1{font-size:21px}
+  .grid,.stats{grid-template-columns:1fr 1fr}
+  .card{border-radius:14px;padding:12px}
+  table{min-width:860px}
+  button{width:100%}
+  .row>button{width:auto;flex:1}
+}
+
+.tabs{display:flex;gap:8px;position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0 10px;margin-bottom:8px}
+.tabbtn{flex:1;background:#fff;color:var(--text);border:1px solid var(--line);padding:11px 8px}
+.tabbtn.active{background:var(--accent);color:#fff}
+.tabpage{display:none}.tabpage.active{display:block}
+@media(max-width:640px){.tabs{top:0}}
+
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:4px 0 14px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  padding:8px 0;
+  background:var(--bg);
+}
+.tab-btn{
+  width:100%;
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--line);
+  box-shadow:0 1px 4px rgba(0,0,0,.03);
+}
+.tab-btn.active{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+.tab-page{display:none}
+.tab-page.active{display:block}
+.guide-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.guide-card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+  background:#fff;
+}
+.guide-card h3{
+  margin:0 0 8px;
+  font-size:17px;
+}
+.guide-pair{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.guide-item{
+  background:var(--soft);
+  border-radius:10px;
+  padding:9px;
+  min-height:72px;
+}
+.guide-item span{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.guide-item b{
+  font-size:15px;
+}
+.color-dot{
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,.16);
+  margin-right:7px;
+  vertical-align:-1px;
+}
+@media (max-width:640px){
+  .tabs{grid-template-columns:1fr 1fr}
+  .guide-grid{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+
+    <h1>造型饅頭配方計算器</h1>
+  
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tabCalc" onclick="showPage('calculatorPage')">配方計算</button>
+    <button type="button" class="tab-btn" id="tabGuide" onclick="showPage('guidePage')">食材圖鑑</button>
+  </div>
+
+  <section id="calculatorPage" class="tab-page active">
+<div class="card">
+    <h2>① 基本計算</h2>
+    <div class="grid">
+      <div><label>人數</label><input id="people" type="number" value="17" min="1" step="1"></div>
+      <div><label>每人製作數量（顆）</label><input id="perPerson" type="number" value="2" min="1" step="1"></div>
+      <div><label>每顆重量（g）</label><input id="pieceWeight" type="number" value="74" readonly style="background:#f3f4f6;font-weight:700"></div>
+      <div><label>成品率（%）</label><input id="yieldRate" type="number" value="90" min="1" max="100" step="0.1"></div>
+    </div>
+    <div class="stats" style="margin-top:12px">
+      <div class="stat"><span class="small">總顆數</span><b id="totalPieces">34</b></div>
+      <div class="stat"><span class="small">成品總重量</span><b id="finishedWeight">2516 g</b></div>
+      <div class="stat"><span class="small">含損耗需準備</span><b id="neededWeight">2795.6 g</b></div>
+      <div class="stat"><span class="small">配方倍數（依基礎配方總重）</span><b id="factor">15.71 倍</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>①-1 圖案堆疊（每顆）</h2>
+    <div class="small" style="margin-bottom:10px">
+      填寫每一顆饅頭的圖案材料與克數；下方總克數會自動成為①的「每顆重量」。
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <button type="button" class="secondary" id="addPatternBtn">＋ 新增圖案材料</button>
+    </div>
+    <div class="table-wrap">
+      <table style="min-width:520px">
+        <thead>
+          <tr><th>圖案／材料</th><th>每顆克數（g）</th><th></th></tr>
+        </thead>
+        <tbody id="patternBody"></tbody>
+        <tfoot>
+          <tr>
+            <th colspan="1">圖案堆疊總克數（每顆）</th>
+            <th><b id="patternTotal">74 g</b></th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 基礎配方</h2>
+    <div class="table-wrap">
+      <table id="baseRecipeTable" style="min-width:1040px">
+        <thead>
+          <tr>
+            <th>顏色</th>
+            <th>全脂鮮奶 g</th>
+            <th>天然食材／色粉</th>
+            <th>添加克數 g</th>
+            <th>酵母 g</th>
+            <th>細砂糖 g</th>
+            <th>中筋麵粉 g</th>
+            <th>橄欖油 g</th>
+            <th>基礎配方總重</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <select id="baseColor">
+                <option>白色</option><option>紅色</option><option>橘色</option>
+                <option>黃色</option><option>棕色</option><option>綠色</option>
+                <option>藍色</option><option>紫色</option><option>灰色</option>
+                <option>黑色</option><option>其他</option>
+              </select>
+            </td>
+            <td><input id="baseMilk" class="baseInput mini" type="number" value="55" min="0" step="0.1"></td>
+            <td><select id="basePowder"></select></td>
+            <td><input id="basePowderG" class="baseInput mini" type="number" value="0" min="0" step="0.1"></td>
+            <td><input id="baseYeast" class="baseInput mini" type="number" value="1" min="0" step="0.1"></td>
+            <td><input id="baseSugar" class="baseInput mini" type="number" value="15" min="0" step="0.1"></td>
+            <td><input id="baseFlour" class="baseInput mini" type="number" value="100" min="0" step="0.1"></td>
+            <td><input id="baseOil" class="baseInput mini" type="number" value="7" min="0" step="0.1"></td>
+            <td><b id="baseTotal">178 g</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="small" style="margin-top:8px">先選顏色，再選對應的天然食材或色粉，並輸入添加克數。所有材料克數都可以直接修改，總重與配方倍數會自動重新計算。</div>
+  </div>
+
+  <div class="card">
+    <h2>③ 配方倍數換算</h2>
+    <div class="small" style="margin-bottom:10px">
+      依上方算出的配方倍數，自動顯示「原始克數 × 配方倍數 ＝ 實際所需克數」。
+    </div>
+    <div class="table-wrap">
+      <table id="factorRecipeTable" style="min-width:760px">
+        <thead>
+          <tr>
+            <th>材料</th>
+            <th>原始克數</th>
+            <th>配方倍數</th>
+            <th>計算式</th>
+            <th>實際所需</th>
+          </tr>
+        </thead>
+        <tbody id="factorRecipeBody"></tbody>
+      </table>
+    </div>
+  </div>
+<div class="card">
+    <h2>④ 我的配方</h2>
+    <div class="small" style="margin-bottom:10px">
+      可以把目前配方儲存在這支手機的瀏覽器裡，之後直接載入。也可以匯出備份檔，換手機時再匯入。
+    </div>
+
+    <div class="grid" style="margin-bottom:10px">
+      <div>
+        <label>配方名稱</label>
+        <input id="recipeName" type="text" placeholder="例如：庫洛咪造型饅頭">
+      </div>
+      <div style="display:flex;align-items:end">
+        <button id="saveRecipeBtn" type="button" style="width:100%">儲存目前配方</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table style="min-width:620px">
+        <thead><tr><th>已儲存配方</th><th>操作</th></tr></thead>
+        <tbody id="savedRecipesBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-actions">
+      <button id="exportRecipesBtn" type="button" class="secondary">匯出備份</button>
+      <label for="importRecipesInput" class="secondary" style="display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--soft);">
+        匯入備份
+      </label>
+      <input id="importRecipesInput" type="file" accept=".json,application/json" style="display:none">
+      <button id="resetBtn" type="button" class="danger">恢復預設</button>
+    </div>
+
+    <div class="small" style="margin-top:8px">
+      配方紀錄儲存在目前瀏覽器；清除瀏覽器網站資料可能會一併刪除。重要配方建議使用「匯出備份」保存。
+    </div>
+  </div>
+
+  </section>
+
+<section id="guidePage" class="tab-page">
+    <div class="card">
+      <h2>天然色彩食材</h2>
+      <div class="small" style="margin-bottom:12px">依顏色整理可使用的新鮮食材與天然調色粉。</div>
+      <div class="guide-grid">
+        <div class="guide-card"><h3><span class="color-dot" style="background:#c93b4b"></span>紅色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>甜菜根</b></div><div class="guide-item"><span>天然調色粉</span><b>紅麴粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#ed8a31"></span>橘色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>胡蘿蔔</b></div><div class="guide-item"><span>天然調色粉</span><b>胡蘿蔔粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#f0c93d"></span>黃色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>南瓜</b></div><div class="guide-item"><span>天然調色粉</span><b>南瓜粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#7a4b2d"></span>棕色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>黑糖</b></div><div class="guide-item"><span>天然調色粉</span><b>可可粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#62a65a"></span>綠色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>菠菜</b></div><div class="guide-item"><span>天然調色粉</span><b>抹茶粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#5b78c7"></span>藍色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>蝶豆花</b></div><div class="guide-item"><span>天然調色粉</span><b>蝶豆花粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#8051a8"></span>紫色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>紫地瓜</b></div><div class="guide-item"><span>天然調色粉</span><b>紫地瓜粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#8c8c8c"></span>灰色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>芋頭</b></div><div class="guide-item"><span>天然調色粉</span><b>黑芝麻粉</b></div></div></div>
+        <div class="guide-card"><h3><span class="color-dot" style="background:#222"></span>黑色</h3><div class="guide-pair"><div class="guide-item"><span>新鮮食材</span><b>無</b></div><div class="guide-item"><span>天然調色粉</span><b>食用竹炭粉</b></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>造型饅頭基礎食材</h2>
+      <div class="guide-grid" style="grid-template-columns:1fr">
+        <div class="guide-card"><h3>中筋麵粉</h3><div class="small">教材建議：嘉禾牌粉心粉（藍菊花麵粉）；若買不到可用其他中筋麵粉。</div></div>
+        <div class="guide-card"><h3>酵母粉</h3><div class="small">教材建議：法國即溶酵母。</div></div>
+        <div class="guide-card"><h3>全脂鮮奶</h3><div class="small">教材建議：全脂鮮奶。</div></div>
+        <div class="guide-card"><h3>細砂糖</h3><div class="small">教材建議：細粒白砂糖。</div></div>
+        <div class="guide-card"><h3>沙拉油／奶油</h3><div class="small">教材說明可使用無刺鼻味沙拉油或無鹽奶油。</div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+
+function showPage(pageId){
+  var calc=document.getElementById("calculatorPage");
+  var guide=document.getElementById("guidePage");
+  var tabCalc=document.getElementById("tabCalc");
+  var tabGuide=document.getElementById("tabGuide");
+
+  if(pageId==="guidePage"){
+    calc.style.display="none";
+    guide.style.display="block";
+    tabCalc.classList.remove("active");
+    tabGuide.classList.add("active");
+  }else{
+    calc.style.display="block";
+    guide.style.display="none";
+    tabGuide.classList.remove("active");
+    tabCalc.classList.add("active");
+  }
+  window.scrollTo(0,0);
+}
+
+let base = [
+  ["全脂鮮奶",55],["速溶酵母",1],["細砂糖",15],["中筋麵粉",100],["橄欖油",7]
+];
+const colors = ["白色","紅色","橘色","黃色","棕色","綠色","藍色","紫色","灰色","黑色","其他"];
+const powdersByColor = {
+  "白色":["無"],
+  "紅色":["甜菜根","紅麴粉","無"],
+  "橘色":["胡蘿蔔","胡蘿蔔粉","無"],
+  "黃色":["南瓜","南瓜粉","無"],
+  "棕色":["黑糖","可可粉","無"],
+  "綠色":["菠菜","抹茶粉","無"],
+  "藍色":["蝶豆花","蝶豆花粉","無"],
+  "紫色":["紫地瓜","紫地瓜粉","無"],
+  "灰色":["芋頭","黑芝麻粉","無"],
+  "黑色":["食用竹炭粉","無"],
+  "其他":["無","甜菜根","紅麴粉","胡蘿蔔","胡蘿蔔粉","南瓜","南瓜粉","黑糖","可可粉","菠菜","抹茶粉","蝶豆花","蝶豆花粉","紫地瓜","紫地瓜粉","芋頭","黑芝麻粉","食用竹炭粉"]
+};
+function num(v){ const n=parseFloat(v); return isFinite(n)?n:0; }
+function fmt(n,d=1){ return Number(n).toLocaleString("zh-TW",{maximumFractionDigits:d}); }
+
+function getBaseValues(){
+  const vals = [
+    num(document.getElementById("baseMilk").value),
+    num(document.getElementById("baseYeast").value),
+    num(document.getElementById("baseSugar").value),
+    num(document.getElementById("baseFlour").value),
+    num(document.getElementById("baseOil").value)
+  ];
+  vals.forEach((v,i)=>base[i][1]=v);
+  return vals;
+}
+
+function updateBasePowderOptions(keepValue=true){
+  const color=document.getElementById("baseColor").value;
+  const sel=document.getElementById("basePowder");
+  const old=sel.value;
+  const list=powdersByColor[color]||powdersByColor["其他"];
+  sel.innerHTML=list.map(p=>`<option>${p}</option>`).join("");
+  if(keepValue && list.includes(old)) sel.value=old;
+}
+
+let patternRows = [
+  {name:"紅色麵糰", grams:30},
+  {name:"白色麵糰", grams:40},
+  {name:"綠色麵糰", grams:4},
+  {name:"黑芝麻粒", grams:0}
+];
+
+function renderPattern(){
+  const body=document.getElementById("patternBody");
+  if(!body) return;
+  body.innerHTML=patternRows.map((r,i)=>`
+    <tr>
+      <td><input type="text" value="${r.name}" data-pidx="${i}" data-pfield="name" placeholder="例如：紅色麵糰"></td>
+      <td><input class="mini" type="number" value="${r.grams}" min="0" step="0.1" data-pidx="${i}" data-pfield="grams"></td>
+      <td><button type="button" class="danger" data-pdel="${i}">刪除</button></td>
+    </tr>`).join("");
+
+  body.querySelectorAll("[data-pidx]").forEach(el=>{
+    el.addEventListener("input",()=>{
+      const i=Number(el.dataset.pidx);
+      if(el.dataset.pfield==="name") patternRows[i].name=el.value;
+      else patternRows[i].grams=num(el.value);
+      updatePatternTotal();
+    });
+  });
+  body.querySelectorAll("[data-pdel]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      patternRows.splice(Number(btn.dataset.pdel),1);
+      renderPattern();
+      updatePatternTotal();
+    });
+  });
+  updatePatternTotal();
+}
+
+function updatePatternTotal(){
+  const total=patternRows.reduce((sum,r)=>sum+num(r.grams),0);
+  const totalEl=document.getElementById("patternTotal");
+  const pw=document.getElementById("pieceWeight");
+  if(totalEl) totalEl.textContent=fmt(total,1)+" g";
+  if(pw) pw.value=Number(total.toFixed(2));
+  calcMain();
+}
+
+function calcMain(){
+  const people=num(document.getElementById("people").value);
+  const per=num(document.getElementById("perPerson").value);
+  const pw=num(document.getElementById("pieceWeight").value);
+  const yr=num(document.getElementById("yieldRate").value)/100;
+  const pieces=people*per;
+  const finished=pieces*pw;
+  const needed=yr>0?finished/yr:0;
+  const vals=getBaseValues();
+  const baseTotal=vals.reduce((a,b)=>a+b,0)+num(document.getElementById("basePowderG").value);
+  const factor=baseTotal>0?needed/baseTotal:0;
+  document.getElementById("totalPieces").textContent=fmt(pieces,0);
+  document.getElementById("finishedWeight").textContent=fmt(finished,1)+" g";
+  document.getElementById("neededWeight").textContent=fmt(needed,1)+" g";
+  document.getElementById("factor").textContent=fmt(factor,2)+" 倍";
+  document.getElementById("baseTotal").textContent=fmt(baseTotal,1)+" g";
+  renderFactorRecipe(factor);
+}
+
+function renderFactorRecipe(factor){
+  const body=document.getElementById("factorRecipeBody");
+  if(!body) return;
+  const powderName=document.getElementById("basePowder").value;
+  const powderG=num(document.getElementById("basePowderG").value);
+  const items=[
+    ["全脂鮮奶",num(document.getElementById("baseMilk").value)],
+    [powderName==="無" ? "天然食材／色粉" : powderName,powderG],
+    ["酵母",num(document.getElementById("baseYeast").value)],
+    ["細砂糖",num(document.getElementById("baseSugar").value)],
+    ["中筋麵粉",num(document.getElementById("baseFlour").value)],
+    ["橄欖油",num(document.getElementById("baseOil").value)]
+  ];
+  body.innerHTML=items.map(([name,g])=>{
+    const result=g*factor;
+    return `<tr>
+      <td>${name}</td>
+      <td>${fmt(g,2)} g</td>
+      <td>× ${fmt(factor,2)}</td>
+      <td>${fmt(g,2)} × ${fmt(factor,2)}</td>
+      <td><b>${fmt(result,1)} g</b></td>
+    </tr>`;
+  }).join("");
+}
+
+document.querySelectorAll("#people,#perPerson,#pieceWeight,#yieldRate,.baseInput").forEach(el=>el.addEventListener("input",calcMain));
+document.getElementById("baseColor").addEventListener("change",()=>{
+  updateBasePowderOptions(false);
+  if(document.getElementById("basePowder").value==="無") document.getElementById("basePowderG").value=0;
+  calcMain();
+});
+document.getElementById("basePowder").addEventListener("change",()=>{
+  if(document.getElementById("basePowder").value==="無") document.getElementById("basePowderG").value=0;
+  calcMain();
+});
+function collectCurrentRecipe(){
+  return {
+    people:document.getElementById("people").value,
+    perPerson:document.getElementById("perPerson").value,
+    yieldRate:document.getElementById("yieldRate").value,
+    baseValues:getBaseValues(),
+    baseColor:document.getElementById("baseColor").value,
+    basePowder:document.getElementById("basePowder").value,
+    basePowderG:document.getElementById("basePowderG").value,
+    patternRows:patternRows.map(r=>({name:r.name,grams:num(r.grams)}))
+  };
+}
+
+function applyRecipeData(d){
+  if(!d) return;
+  if(d.people!=null) document.getElementById("people").value=d.people;
+  if(d.perPerson!=null) document.getElementById("perPerson").value=d.perPerson;
+  if(d.yieldRate!=null) document.getElementById("yieldRate").value=d.yieldRate;
+
+  if(Array.isArray(d.baseValues) && d.baseValues.length===5){
+    const ids=["baseMilk","baseYeast","baseSugar","baseFlour","baseOil"];
+    d.baseValues.forEach((v,i)=>document.getElementById(ids[i]).value=v);
+  }
+
+  if(d.baseColor) document.getElementById("baseColor").value=d.baseColor;
+  updateBasePowderOptions(false);
+  if(d.basePowder && [...document.getElementById("basePowder").options].some(o=>o.value===d.basePowder)){
+    document.getElementById("basePowder").value=d.basePowder;
+  }
+  if(d.basePowderG!=null) document.getElementById("basePowderG").value=d.basePowderG;
+
+  if(Array.isArray(d.patternRows)){
+    patternRows=d.patternRows.map(r=>({name:r.name||"",grams:num(r.grams)}));
+    renderPattern();
+  }else{
+    calcMain();
+  }
+}
+
+function getSavedRecipes(){
+  try{
+    const d=JSON.parse(localStorage.getItem("mantouSavedRecipes")||"{}");
+    return d && typeof d==="object" ? d : {};
+  }catch(e){ return {}; }
+}
+
+function setSavedRecipes(d){
+  localStorage.setItem("mantouSavedRecipes",JSON.stringify(d));
+}
+
+function renderSavedRecipes(){
+  const body=document.getElementById("savedRecipesBody");
+  const saved=getSavedRecipes();
+  const names=Object.keys(saved).sort((a,b)=>a.localeCompare(b,"zh-Hant"));
+  if(!names.length){
+    body.innerHTML='<tr><td colspan="2" class="small">目前還沒有儲存任何配方。</td></tr>';
+    return;
+  }
+  body.innerHTML=names.map(name=>`
+    <tr>
+      <td><b>${name}</b></td>
+      <td>
+        <div class="row">
+          <button type="button" class="secondary loadRecipeBtn" data-name="${encodeURIComponent(name)}">載入</button>
+          <button type="button" class="danger deleteRecipeBtn" data-name="${encodeURIComponent(name)}">刪除</button>
+        </div>
+      </td>
+    </tr>`).join("");
+
+  document.querySelectorAll(".loadRecipeBtn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const name=decodeURIComponent(btn.dataset.name);
+      const all=getSavedRecipes();
+      applyRecipeData(all[name]);
+      document.getElementById("recipeName").value=name;
+      window.scrollTo({top:0,behavior:"smooth"});
+    });
+  });
+
+  document.querySelectorAll(".deleteRecipeBtn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const name=decodeURIComponent(btn.dataset.name);
+      if(!confirm(`確定要刪除「${name}」嗎？`)) return;
+      const all=getSavedRecipes();
+      delete all[name];
+      setSavedRecipes(all);
+      renderSavedRecipes();
+    });
+  });
+}
+
+document.getElementById("saveRecipeBtn").addEventListener("click",()=>{
+  const name=document.getElementById("recipeName").value.trim();
+  if(!name){ alert("請先輸入配方名稱。"); return; }
+  const all=getSavedRecipes();
+  if(all[name] && !confirm(`「${name}」已存在，要覆蓋嗎？`)) return;
+  all[name]=collectCurrentRecipe();
+  setSavedRecipes(all);
+  renderSavedRecipes();
+  alert(`已儲存「${name}」。`);
+});
+
+document.getElementById("exportRecipesBtn").addEventListener("click",()=>{
+  const payload={
+    type:"mantou-recipes-backup",
+    version:1,
+    exportedAt:new Date().toISOString(),
+    recipes:getSavedRecipes()
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="造型饅頭配方備份.json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+});
+
+document.getElementById("importRecipesInput").addEventListener("change",e=>{
+  const file=e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      const incoming=data.recipes || data;
+      if(!incoming || typeof incoming!=="object") throw new Error();
+      setSavedRecipes({...getSavedRecipes(),...incoming});
+      renderSavedRecipes();
+      alert("配方備份已匯入。");
+    }catch(err){
+      alert("無法匯入：備份檔格式不正確。");
+    }
+    e.target.value="";
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("resetBtn").onclick=()=>{
+  if(!confirm("要把目前畫面恢復成預設值嗎？已儲存的「我的配方」不會被刪除。")) return;
+  document.getElementById("people").value=17;
+  document.getElementById("perPerson").value=2;
+  document.getElementById("yieldRate").value=90;
+  document.getElementById("baseMilk").value=55;
+  document.getElementById("baseYeast").value=1;
+  document.getElementById("baseSugar").value=15;
+  document.getElementById("baseFlour").value=100;
+  document.getElementById("baseOil").value=7;
+  document.getElementById("baseColor").value="白色";
+  updateBasePowderOptions(false);
+  document.getElementById("basePowderG").value=0;
+  patternRows=[
+    {name:"紅色麵糰", grams:30},
+    {name:"白色麵糰", grams:40},
+    {name:"綠色麵糰", grams:4},
+    {name:"黑芝麻粒", grams:0}
+  ];
+  document.getElementById("recipeName").value="";
+  renderPattern();
+  calcMain();
+};
+
+document.getElementById("addPatternBtn").addEventListener("click",()=>{
+  patternRows.push({name:"其他圖案材料",grams:0});
+  renderPattern();
+});
+
+(function load(){
+  const s=localStorage.getItem("mantouCalcData");
+  if(s){
+    try{
+      const d=JSON.parse(s);
+      ["people","perPerson","pieceWeight","yieldRate"].forEach(k=>{ if(d[k]!=null) document.getElementById(k).value=d[k];});
+      base=d.base||base;
+      if(Array.isArray(d.baseValues) && d.baseValues.length===5){
+        const ids=["baseMilk","baseYeast","baseSugar","baseFlour","baseOil"];
+        d.baseValues.forEach((v,i)=>document.getElementById(ids[i]).value=v);
+      }
+      if(d.baseColor) document.getElementById("baseColor").value=d.baseColor;
+      updateBasePowderOptions(false);
+      if(d.basePowder && [...document.getElementById("basePowder").options].some(o=>o.value===d.basePowder)){
+        document.getElementById("basePowder").value=d.basePowder;
+      }
+      if(d.basePowderG!=null) document.getElementById("basePowderG").value=d.basePowderG;
+    }catch(e){}
+  }
+  renderBaseInputs(); calcMain(); renderMix();
+})();
+</script>
+</body>
+</html>
